@@ -1,23 +1,21 @@
 # Secure-File-System
 A secure file system in C supporting multiple users, access control lists and encryption.
 
-## Overview
-
-### Description
+## Description
 
 This project is an implementation of a secure file system to illustrate basic security mechanisms used in most commercial software. The basic functionality of the system supports the secure storage and retrieval of objects (files of any type) for all users of the operating system. Additional, more powerful access control is provided by assigning access control lists to objects. Finally, all objects are encrypted using the openssl library and are accessed through a passphrase.
 
-### Commands
+## Commands
 The system supports six command as explained below:
 
 **objput obj -k passphrase**
-Read an object from stdin and store it using the passphrase *passphrase*
+Read the contents of an object *obj" from stdin and store it using the passphrase *passphrase*
 
 **objget obj -k passphrase**
-Retrieve an object *obj* using the passphrase "passphrase and output it to stdout
+Retrieve an object *obj* using the passphrase "passphrase and write its contents to stdout
 
 **objlist [-l]**
-List the objects the current user has created. Supplying the optional *-l* parameter displays also the size of each object
+List all of the objects belonging to the current user. If the optional *-l* parameter is given then the size of each object is also displayed
 
 **objsetacl obj**
 Read an access control list from stdin set it to the object *obj* (replacing the old one)
@@ -28,28 +26,33 @@ Retrieve the current access control list of the object *obj* and write it to std
 **objtestacl -a access obj**
 Test weather the current user has some "access" (rwxpv) for the object *obj*. The command outputs "allowed" or "denied" to stdout based on if the supplied kind of access is permitted
 
-The objsetacl command reads an ACL from stdin.  The form is identical
-to that discussed in class: 0 or lines of the following syntax.
+### Details
+
+When trying to create a file that already exists, the file is overwritten with the new input data and it's acl is reverted back to the default
+
+Whenever an empty acl tries to replace an existing acl, the existing acl is not changed.
+
+
+## System Architecture and Access Control
+
+Objects are stored in a single directory with the following syntax:
+username+objname
+
+acls: @username+objname
+
+
+When an object is created, the
+creator's username is stored (somewhere, somehow).  You are welcome to create
+a small number of system users.  Each user has their own namespace; two
+different users can create objects of the same name.
+
+acl form: 0 or lines of the following syntax.
 
 	user.group    ops
 
 The possible "ops" are r, w, x, p, and v.  "p" is "permissions";
 you need "p" permission to change an ACL.  "v" is "view"; you must
 have "v" permission to view an ACL for a file. 
-
-All commands must have a valid username.  When an object is created, the
-creator's username is stored (somewhere, somehow).  You are welcome to create
-a small number of system users.  Each user has their own namespace; two
-different users can create objects of the same name.
-
-objput reads the contents of the object from stdin; objget writes the
-contents of a retrieved object to stdout.  objlist lists all of the objects
-belonging to the specified user; if the -l option is given (and options
-can appear in any order), all metadata associated with the object is
-displayed as well.  At this point, that's just the size of the object,
-but that will change...
-
-### System Architecture and Access Control
 
 emphasize how the architecture is around access control
 
@@ -61,40 +64,14 @@ they are in are also stored as objects.  The userfile is composed of lines in th
 Usernames, group names, and object names can contain letters, digits, and
 underscores; no other characters are legal.
 
-
-For all of these commands, the -u username and -g groupname are the
-values to be compared against the ACL when deciding if permission
-should be granted or denied.  You will need to add a -g option to
-objget and objput; those commands should also check permissions.
-
 Pgm0 specified that each user had a separate name space.  Here,
 though, you want to be able to reference other users' objects.
 Accordingly, objname needs an extended syntax: you can refer to a
 different user's objects via
 
-	username+objname
-
 The heart of this assignment is, of course, the permission-checking.
 
-The list of legal user and group names can be stored in a simple, static
-file.
-
-Implementation hint 1: It is perfectly reasonable to store objects
-in a single directory with a combination of the user name and object
-name as the filename.  It is also reasonable to have a subdirectory
-for each user, and store the objects there.  Your choice; both work.
-
-Implementation hint 2: If you choose to use other objects to store
-ACLs, remember that these must be objects, not files.  More
-specifically, any code you use to read or write them must go through
-the object store routines.  Look at it this way -- what you're building
-is a simplified file system.  If you want to store something -- like
-an ACL -- you have to store it as something you can read: an object,
-not a file.  If you choose to do things this way, your internal code
-must call the "read object" routine.
-
-Implemenation hint 3: For simplicity, when a new object is created
-by some user u, create an initial ACL of
+when a new object is created by some user u, create an initial ACL of
 
 	u.*     rwxpv
 
@@ -106,52 +83,24 @@ Programming with Privileges
 	instead of having -u and -g, see what permissions the
 	programs are actually running with.
 
-	The catch: you MUST prevent any access to the repository
-	that bypasses the ACLs.  This implies that the repository
-	must be protected using OS permissions, which in turn means
-	that a separate UID is needed.  The programs must either
-	be setUID or use message-passing; that's your choice.
+This implies that the repository must be protected using OS permissions, which in turn means that a separate UID is needed.  The programs must either be setUID
 
-	The objects for user and group names are no longer needed;
-	use the system's equivalents.
+1) An objects directory is created to store the objects. The dir permissions are set from the script
+so that only the admin user can read, write and execute it. All others can't do anything else.
 
-	You may not use the OS ACL mechanisms; you must implement
-	them yourself.
+2) Each command executable file has its ownership changed to admin. Only admin will be able to read, write
+and execute them. All others have no permissions. In addition each commmand is setUID. In this way each command
+will be run with the permissions of admin. In this way each command will have access to the objects directory.
 
-	One important design decision: what UID are you using, root
-	or some non-privileged one?  Your README file MUST justify
-	your choice.  A correct choice with an incorrect justification
-	will lose points.  (Of course, an incorrect choice will
-	also lose points.)
+We are NOT using root for setUID but the UID from admin. Admin needs only access to the protected directory
+objects. If we were using root, then root would be able to have access on everything on the system which would
+not be necessary for our application. Therefore we create a privilaged users with as few privilages so that
+our application can work.
 
-	You should run this assignment using a VMware virtual
-	machine; see the instructions on the web page.
+A file name "userobjects.txt" is created to store the objects that each user
+has. This file is used by objget objput and objlist
 
-	If you choose to use message-passing, you need not solve
-	the start-up problem; it is acceptable to start the daemon
-	manually.
-
-	You must supply a script that will create an empty repository,
-	including setting all permissions you rely on for correct,
-	secure behavior.  The README file should explain the rationale
-	for whatever permissions you choose.
-
-	You may (probably will...) find the getuid() and getpwuid()
-	routines (and the corresponding routines for groups) to be
-	helpful.
-
-	Also: because a lot of the testing needs to involve stuff running
-	as different users, the test script must be run as root.  To run
-	something as another user, write
-
-	      su username -c "./objget..."
-
-	      where "username" is whatever username that command should
-	      run as.
-
-
-
-### Encryption
+## Encryption
 
 File Encryption and Key Storage
 
@@ -194,75 +143,45 @@ Remember that AES in CBC mode requires an IV and can only encrypt multiples
 of 16 bytes.  Your code must cope with this -- any file length, including
 0 bytes, must be supported.
 
-You will likely spend more time understanding how to use the MD5 and
-AES routines than writing the actual code.  Plan for that...
-
 ## Setup
+You must supply a script that will create an empty repository, including setting all permissions you rely on for correct, secure behavior.
 
-## Testing
-
-
-
-
-The packet includes a C file for the body of each command. Each command source file is named <command_name>.c
-
-In addition it includes a utilities file "utilities.c" (with corresponding headers file)
-The utilities file contains the basic functions that check for the validity
-of the input data.
-
-Finally, it includes a cryptography file "cryputil.c" (with corresponding headers file).
-This is resposible for:
-- encrypting and decrypting input data from memory using the OpenSSL library
-- checking weather an decryption using the supplied passphraze is valid. If the passphraze is not valid
-no decrypiton is performed.
-
-A default file named "userfile.txt" is included and contains some
-sample users belonging to same sample groups.
-
-The file "setup.c" when compiled makes sure that the users and groups specified in the userfile
-are valid
-
-Files "acl1", "acl2", "file1", "file2" are used for testing
-
-Finally a script name "envinit.sh" reads the users and groups from the userfile and creates them
-in the system.
-This script creates a privilleged user "admin". This user belongs to a single group by himself named
-also "admin". This user is the only user that will have access to the objects. Therefore:
-
-1) An objects directory is created to store the objects. The dir permissions are set from the script
-so that only the admin user can read, write and execute it. All others can't do anything else.
-
-2) Each command executable file has its ownership changed to admin. Only admin will be able to read, write
-and execute them. All others have no permissions. In addition each commmand is setUID. In this way each command
-will be run with the permissions of admin. In this way each command will have access to the objects directory.
-
-We are NOT using root for setUID but the UID from admin. Admin needs only access to the protected directory
-objects. If we were using root, then root would be able to have access on everything on the system which would
-not be necessary for our application. Therefore we create a privilaged users with as few privilages so that
-our application can work.
-
--------------------------------------------------------
-
-To build the commands with the default file type:
+To build the commands and setup your environment with the default userfile supplied:
 make exec
 
-To build them with a custom userfile type:
+To build the commands and setup your environment with a custom userfile type:
 make exec userfile="custom_userfile.txt"
 
+## Testing
 To test the commands: a sample test script has been written in the Makefile. To test, type:
 make test
 
--------------------------------------------------------
 
-Notes on commands:
-------------------
+## Source Files Description
 
-A file name "userobjects.txt" is created to store the objects that each user
-has. This file is used by objget objput and objlist
+**<command_name>.c**
+The body of each command
 
-Also when trying to create a file that already exists, the file is
-overwritten with the new input data and it's acl is reverted back to the default
+**utilities.c** and **utilities.h**
+Contains the basic functions that check for the validity of the input data.
 
-Whenever an empty acl tries to replace an existing acl, the existing acl is
-not changed.
+**cryputil.c** and **cryputil.h**
+This is resposible for:
+- encrypting and decrypting input data from memory using the OpenSSL library
+- checking weather an decryption using the supplied passphraze is valid. If the passphraze is not valid
+no decrypiton is performed
+
+**userfile.txt**
+Sample users names and group names used by the setup script to create the corresponding users and groups in the system.
+
+**setup.c**
+Verifies that the user and group names specified in the userfile are valid
+
+**acl1, acl2, file1, file2**
+Used by the testing script
+
+**envinit.sh**
+The setup script that reads the user and group hames from the userfile and creates them in the system.
+This script also creates a privilleged user "admin". This user belongs to a single group by himself named
+also "admin". This user is the only user that will have access to the objects.
 
