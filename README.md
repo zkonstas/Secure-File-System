@@ -111,8 +111,7 @@ A sample test script has been written in the Makefile. To test, run:
 
 `utilities.c` and `utilities.h`: Contains the basic functions that check for the validity of the input data.
 
-`cryputil.c` and `cryputil.h`
-These files are resposible for:
+`cryputil.c` and `cryputil.h`: These files are responsible for:
 - encrypting and decrypting input data from memory using the OpenSSL library
 - checking whether a decryption using the supplied passphrase is valid. If the passphrae is not valid
 no decryption is performed
@@ -126,5 +125,5 @@ no decryption is performed
 `envinit.sh`: The setup script that reads the user and group names from the userfile and creates them in the system. This script also creates the privilleged user **admin**. This user belongs to a single group by himself named also "admin". This user is the only user that will have access to the objects.
 
 ## Additional Details
-This system was developed as a project for the class COMS4187 - Security Architecture and Engineering in the Fall 2014 at Columbia University.
+This system was developed as a project for the class COMS4187-"Security Architecture and Engineering" in the Fall 2014 at Columbia University.
 
