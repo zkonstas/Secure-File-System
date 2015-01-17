@@ -74,10 +74,10 @@ To setup your environment including:
 
 you have two options:
 
-1) For creating users/groups supplied with the default userfile run:
+1)For creating users/groups supplied with the default userfile run:
 	make exec
 
-2) For creating users/groups supplied with a custom userfile run:
+2)For creating users/groups supplied with a custom userfile run:
 	make exec userfile="custom_userfile.txt"
 
 The custom userfile must be composed of 1 or more lines of the following syntax:
