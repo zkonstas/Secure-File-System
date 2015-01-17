@@ -8,8 +8,10 @@ This project is an implementation of a secure file system to illustrate basic se
 ## Commands
 The system supports six command as explained below:
 
+
+1) Read the contents of an object *obj* from stdin and store the object using the passphrase *passphrase*
+	
 	objput obj -k passphrase
-Read the contents of an object *obj* from stdin and store the object using the passphrase *passphrase*
 
 `objget obj -k passphrase`: Retrieve an object *obj* using the valid passphrase *passphrase* and write its contents to stdout
 
