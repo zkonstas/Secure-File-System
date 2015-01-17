@@ -27,127 +27,67 @@ The system supports six command as explained below:
 
 ## System Architecture and Access Control
 
-Objects are stored in a single directory with the following syntax:
-username+objname
+The system provides access contol to objects for different users. All the users of the operating system can create objects in the "Secure File System" and access them including objects of other users. All objects are stored in the single directory `objects/` that is created by the setup script and have the following sytax:
 
-acls: @username+objname
+	username+objectname
 
+Consequently two different users can create objects of the same name. A file name `userobjects.txt` is created to store the information about which objects each user has. When an object is created an entry of the username along with the object name is appended to this file. This file is used by objget objput and objlist.
 
-When an object is created, the
-creator's username is stored (somewhere, somehow).  You are welcome to create
-a small number of system users.  Each user has their own namespace; two
-different users can create objects of the same name.
+Access control to files is provided through access control lists enforced by the **Secure File System**. In other words, our system checks the ACL's of each object and whether they current user that is trying to modify it has the required permissions. For this reason unathorized access to the objects through OS's file system is prevented by performing the following two tasks.
 
-acl form: 0 or lines of the following syntax.
+1) Creating the repository `objects/` directory to store the objects. Then the directory permissions are changed so that only some privileged user **admin** can read, write and execute it. All others have no permissions to do anything else, including access the objects stored in it.
+
+2) Each command executable file has its ownership changed to **admin**. Only admin will be able to read, write and execute them. All others have no permissions. In addition each commmand is setUID. In this way each command will be run with the permissions of **admin**. In this way each command will have access to the objects directory.
+
+These two tasks are perfomed by the system script `envinit.sh`.
+
+### Access Control Lists Details
+
+Each object has an ACL file with the following syntax:
+
+	@username+objname
+
+Each ACL file has 0 or more lines of the following syntax:
 
 	user.group    ops
 
-The possible "ops" are r, w, x, p, and v.  "p" is "permissions";
-you need "p" permission to change an ACL.  "v" is "view"; you must
-have "v" permission to view an ACL for a file. 
+The possible **ops** are **r**, **w**, **x**, **p**, and **v**. "r" is read permissions to get an object. "w" is write permissions to overwrite an object. "x" is execute permissios to execute an object. p" is "permissions"; you need "p" permission to change an ACL.  "v" is "view"; you must have "v" permission to view an ACL for a file. 
 
-emphasize how the architecture is around access control
-
-There are multiple user and groups.  The list of users and what groups
-they are in are also stored as objects.  The userfile is composed of lines in this format:
-
-	username group1 group2 ...
-
-Usernames, group names, and object names can contain letters, digits, and
-underscores; no other characters are legal.
-
-Pgm0 specified that each user had a separate name space.  Here,
-though, you want to be able to reference other users' objects.
-Accordingly, objname needs an extended syntax: you can refer to a
-different user's objects via
-
-The heart of this assignment is, of course, the permission-checking.
-
-when a new object is created by some user u, create an initial ACL of
+When a new object is created by some user u, create an initial ACL of
 
 	u.*     rwxpv
 
-
-Programming with Privileges
-
-	For this assignment, modify the programs for the last
-	assignment to use the actual user and group ID.  That is,
-	instead of having -u and -g, see what permissions the
-	programs are actually running with.
-
-This implies that the repository must be protected using OS permissions, which in turn means that a separate UID is needed.  The programs must either be setUID
-
-1) An objects directory is created to store the objects. The dir permissions are set from the script
-so that only the admin user can read, write and execute it. All others can't do anything else.
-
-2) Each command executable file has its ownership changed to admin. Only admin will be able to read, write
-and execute them. All others have no permissions. In addition each commmand is setUID. In this way each command
-will be run with the permissions of admin. In this way each command will have access to the objects directory.
-
-We are NOT using root for setUID but the UID from admin. Admin needs only access to the protected directory
-objects. If we were using root, then root would be able to have access on everything on the system which would
-not be necessary for our application. Therefore we create a privilaged users with as few privilages so that
-our application can work.
-
-A file name "userobjects.txt" is created to store the objects that each user
-has. This file is used by objget objput and objlist
-
 ## Encryption
 
-File Encryption and Key Storage
+The **Secure File System** also supports file encryption. Objects are encrypted when created and decrypted when retrieved. Files are encrypted with AES in CBC mode using a random 128-bit file-encrypting key. This per-file key is encrypted with the user-supplied passphrase. The passphraze is converted to a 128-bit key using MD5 and used as a key to encrypt/decrypt the random per-file key. Finally, each encrypted key for each object is stored securely in the `objects/` directory using the following filename sytax:
 
-For this assignment, add a mechanism to encrypt objects when they're
-created, and to decrypt objects when they're retrieved.  Again, use
-your VM; this is in addition to the setuid features you've already added.
+	$username+objname
 
-All files must be encrypted with a random file-encrypting key.  Read
-enough bytes for the key from /dev/urandom.  This per-file key must be
-encrypted with a user-supplied passphrase.  To do this, add an option
-
-	-k passphrase
-
-to the objget and objput commands.  As mentioned in class, putting a
-passphrase on the command line is a bad idea; I specify it here to
-simplify testing.
-
-Convert the passphrase to a 128-bit key using MD5.  MD5 is available
-as part of the openssl library; You'll also need to use '-lssl'
-when linking your program.  (There are also reasons why this isn't
-a great way to create a key from a passphrase, but they're beyond
-the scope of this class.)
-
-Because you're encrypting with a random key, you have to store this
-encrypted key somewhere.  It's up to you to pick a suitable place.
-VERY IMPORTANT: the setuid program should verify the decryption--you
-get to decide how that check is done--before returning anything.
-The encrypted file-encrypting key should NOT be available; otherwise,
-an attacker could launch an offline password-guessing attack.
-
-Use AES with 128-bit keys and CBC mode.
-
-For documentation on the EVP interface to SSL, see
-	
-	http://wiki.openssl.org/index.php/Libcrypto_API
-	http://wiki.openssl.org/index.php/EVP
-	http://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
-
-Remember that AES in CBC mode requires an IV and can only encrypt multiples
-of 16 bytes.  Your code must cope with this -- any file length, including
-0 bytes, must be supported.
 
 ## Setup
-You must supply a script that will create an empty repository, including setting all permissions you rely on for correct, secure behavior.
 
-To build the commands and setup your environment with the default userfile supplied:
-make exec
+To setup your environment including:
+- creating the appropriate directories
+- setting up the required permissions
+- creating the users and groups of the system
+- compile all files
 
-To build the commands and setup your environment with a custom userfile type:
-make exec userfile="custom_userfile.txt"
+you have two options:
+
+1) For creating users/groups supplied with the default userfile run:
+	make exec
+
+2) For creating users/groups supplied with a custom userfile run:
+	make exec userfile="custom_userfile.txt"
+
+The custom userfile must be composed of 1 or more lines of the following syntax:
+	username group1 group2 ...
+
+These commands will validate the userfile, create the appropriate users in the operating system.
 
 ## Testing
-To test the commands: a sample test script has been written in the Makefile. To test, type:
-make test
-
+A sample test script has been written in the Makefile. To test, type:
+	make test
 
 ## Source Files Description
 
@@ -176,4 +116,7 @@ Used by the testing script
 The setup script that reads the user and group hames from the userfile and creates them in the system.
 This script also creates a privilleged user "admin". This user belongs to a single group by himself named
 also "admin". This user is the only user that will have access to the objects.
+
+## Additional Details
+This system was developed as a project for the class COMS4187 in the Fall 2014 at Columbia University.
 
