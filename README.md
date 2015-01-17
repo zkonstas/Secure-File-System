@@ -10,8 +10,7 @@ The system supports six command as explained below:
 
 `objput obj -k passphrase`: Read the contents of an object *obj* from stdin and store the object using the passphrase *passphrase*
 
-	objget obj -k passphrase
-Retrieve an object *obj* using the valid passphrase *passphrase* and write its contents to stdout
+`objget obj -k passphrase`: Retrieve an object *obj* using the valid passphrase *passphrase* and write its contents to stdout
 
 **objlist [-l]**
 List all of the objects belonging to the current user. If the optional *-l* parameter is given then the size of each object is also displayed
