@@ -9,19 +9,29 @@ This project is an implementation of a secure file system to illustrate basic se
 The system supports six command as explained below:
 
 
-1) Read the contents of an object *obj* from stdin and store the object using the passphrase *passphrase*
+1) Read the contents of an object "obj" from stdin and store the object using the passphrase "passphrase"
 	
 	objput obj -k passphrase
 
-`objget obj -k passphrase`: Retrieve an object *obj* using the valid passphrase *passphrase* and write its contents to stdout
+2) Retrieve an object "obj" using the valid passphrase "passphrase" and write its contents to stdout
 
-`objlist [-l]`: List all of the objects belonging to the current user. If the optional *-l* parameter is given then the size of each object is also displayed
+	objget obj -k passphrase
 
-`objsetacl obj`: Read an access control list from stdin and set it to the object *obj* (replacing the old one)
+3) List all of the objects belonging to the current user. If the optional "-l" parameter is given then the size of each object is also displayed
 
-`objgetacl obj`:  Retrieve the current access control list of the object *obj* and write it to stdout
+	objlist [-l]
 
-`objtestacl -a access obj`: Test weather the current user has the supplied *access* (any combination of *rwxpv*) for the object *obj*. The command outputs "allowed" or "denied" to stdout based on if the supplied kind of access is permitted
+4) Read an access control list from stdin and set it to the object "obj" (replacing the old one)
+
+	objsetacl obj
+
+5) Retrieve the current access control list of the object "obj" and write it to stdout
+
+	objgetacl obj
+
+6) Test weather the current user has the supplied "access" (any combination of *rwxpv*) for the object "obj". The command outputs "allowed" or "denied" to stdout based on if the supplied kind of access is permitted
+
+	objtestacl -a access obj
 
 ### Details
 
